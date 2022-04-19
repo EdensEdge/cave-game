@@ -177,7 +177,7 @@ heightSlider.oninput = () => {
 function reset() {
     starveSlider.value = document.querySelector('div#starve span').innerText = String(STARVE = 4);
     reviveSlider.value = document.querySelector('div#revive span').innerText = String(REVIVE = 5);
-    chanceSlider.value = document.querySelector('div#chance span').innerText = String(CHANCE = 4);
+    chanceSlider.value = document.querySelector('div#chance span').innerText = String(CHANCE = 0.4);
     stepsSlider.value = document.querySelector('div#steps span').innerText = String(STEPS = 4);
     widthSlider.value = document.querySelector('div#width span').innerText = String(WIDTH = 80);
     heightSlider.value = document.querySelector('div#height span').innerText = String(HEIGHT = 60);
