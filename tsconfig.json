@@ -1,5 +1,7 @@
 {
+  "exclude": ["src/dist"],
   "compilerOptions": {
+    "rootDir": "src",
     "lib": ["dom", "es2021"],
     "module": "es2020",
     "target": "es2021"

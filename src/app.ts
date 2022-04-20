@@ -6,7 +6,7 @@ const canv2 = <HTMLCanvasElement> document.querySelector('canvas#l2');
 const ctx2 = canv2.getContext('2d');
 
 class GridArray extends Array<boolean> {
-    
+
     width: number;
     height: number;
 
@@ -16,9 +16,18 @@ class GridArray extends Array<boolean> {
         this.height = h;
     }
 
-    _1dto2d(i): {x: number, y: number} { return {x:i%this.width, y:Math.floor(i/this.width)} }
-    _2dto1d(x,y): number { return y*this.width+x; }
-    _2dtoval(x,y): boolean { return this[y*this.width+x]; }
+    getIndex(i: number): {x: number, y: number} { return {x:i%this.width, y:Math.floor(i/this.width)} }
+    getCoord(x: number, y: number): number { return y*this.width+x; }
+    fromCoord(x: number, y: number): boolean { return this[y*this.width+x]; }
+
+    slice2(startx = 0, endx = this.length, starty = 0, endy = this.length): GridArray {
+        let res = new GridArray(startx - endx, starty - endy);
+        for (let x = starty; x < endx; x++)
+        for (let y = starty; y < endy; y++) {
+            res[res.getCoord(x, y)] = this[this.getCoord(x, y)];
+        }
+        return res;
+    }
 }
 
 const widthSlider = <HTMLInputElement> document.querySelector('div#width input');
@@ -51,16 +60,16 @@ function generate() {
     for (let step = STEPS; step > 0; step--) {
         const buffer = points;
         for (let i = 0; i < buffer.length; i++) {
-            const pos = buffer._1dto2d(i);
+            const pos = buffer.getIndex(i);
             const neighbors =
-            (pos.y>0&&buffer._2dtoval(pos.x, pos.y-1)?1:0)              // Above
-            +(pos.x>0&&buffer._2dtoval(pos.x-1, pos.y)?1:0)             // Left
-            +(pos.y<buffer.height&&buffer._2dtoval(pos.x, pos.y+1)?1:0) // Below
-            +(pos.x<buffer.width&&buffer._2dtoval(pos.x+1, pos.y)?1:0)  // Right
-            +(pos.x>0&&pos.y>0&&buffer._2dtoval(pos.x-1, pos.y-1)?1:0)                         // Above+Left
-            +(pos.x>0&&pos.y<buffer.height&&buffer._2dtoval(pos.x-1, pos.y+1)?1:0)             // Bottom+Left
-            +(pos.x<buffer.width&&pos.y>0&&buffer._2dtoval(pos.x+1, pos.y-1)?1:0)              // Above+Right
-            +(pos.x<buffer.width&&pos.y<buffer.height&&buffer._2dtoval(pos.x+1, pos.y+1)?1:0); // Below+Right
+            (pos.y>0&&buffer.fromCoord(pos.x, pos.y-1)?1:0)              // Above
+            +(pos.x>0&&buffer.fromCoord(pos.x-1, pos.y)?1:0)             // Left
+            +(pos.y<buffer.height&&buffer.fromCoord(pos.x, pos.y+1)?1:0) // Below
+            +(pos.x<buffer.width&&buffer.fromCoord(pos.x+1, pos.y)?1:0)  // Right
+            +(pos.x>0&&pos.y>0&&buffer.fromCoord(pos.x-1, pos.y-1)?1:0)                         // Above+Left
+            +(pos.x>0&&pos.y<buffer.height&&buffer.fromCoord(pos.x-1, pos.y+1)?1:0)             // Bottom+Left
+            +(pos.x<buffer.width&&pos.y>0&&buffer.fromCoord(pos.x+1, pos.y-1)?1:0)              // Above+Right
+            +(pos.x<buffer.width&&pos.y<buffer.height&&buffer.fromCoord(pos.x+1, pos.y+1)?1:0); // Below+Right
             
             if (buffer[i] && neighbors < STARVE) points[i] = false;
             else if (neighbors > REVIVE) points[i] = true;
@@ -86,10 +95,10 @@ function generate() {
         const b = {x:x+0.5,y:y+1};
         const l = {x,y:y+0.5};
 
-        const tl = points._2dtoval(x, y)?0x000:0x1000;     // Top right
-        const tr = points._2dtoval(x+1, y)?0x000:0x0100;   // Top Left
-        const br = points._2dtoval(x+1, y+1)?0x000:0x0010; // Bottom right
-        const bl = points._2dtoval(x, y+1)?0x000:0x0001;   // Bottom left
+        const tl = points.fromCoord(x, y)?0x000:0x1000;     // Top right
+        const tr = points.fromCoord(x+1, y)?0x000:0x0100;   // Top Left
+        const br = points.fromCoord(x+1, y+1)?0x000:0x0010; // Bottom right
+        const bl = points.fromCoord(x, y+1)?0x000:0x0001;   // Bottom left
 
         switch (tl|tr|br|bl) {
             case 1: line(l, b); break; // 1
@@ -125,7 +134,7 @@ function generate() {
     ctx1.fillStyle = 'blue';
     for (let i = 0; i < points.length; i++) {
         if (points[i]) {
-            const pos = points._1dto2d(i);
+            const pos = points.getIndex(i);
             ctx1.beginPath();
             ctx1.arc(pos.x*unitWidth, pos.y*unitHeight, 1, 0, Math.PI*2);
             ctx1.closePath();
@@ -192,8 +201,8 @@ canv2.addEventListener('mousemove', e => {
     const x = Math.floor(e.offsetX/unitWidth);
     const y = Math.floor(e.offsetY/unitHeight);
     (<HTMLParagraphElement> stats.querySelector('p#pos')).innerText = `Position: (${x},${y})`;
-    (<HTMLParagraphElement> stats.querySelector('p#index')).innerText = 'Index: ' + points._2dto1d(x, y);
-    (<HTMLParagraphElement> stats.querySelector('p#type')).innerText = 'Type: ' + (points._2dtoval(x, y)?'Floor':'Wall');
+    (<HTMLParagraphElement> stats.querySelector('p#index')).innerText = 'Index: ' + points.getCoord(x, y);
+    (<HTMLParagraphElement> stats.querySelector('p#type')).innerText = 'Type: ' + (points.fromCoord(x, y)?'Floor':'Wall');
 
     ctx2.clearRect(0, 0, canv2.width, canv2.height);
     ctx2.fillRect(Math.floor(e.offsetX/unitWidth)*unitWidth, Math.floor(e.offsetY/unitHeight)*unitHeight, unitWidth, unitHeight);
